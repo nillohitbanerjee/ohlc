@@ -9,10 +9,15 @@ import com.upstock.compute.events.ComputeTrade;
 import com.upstock.dao.StoreTrade;
 import com.upstock.dao.StoreTradeImpl;
 import com.upstock.dto.Tread;
+import com.upstock.dto.TreadBar;
 import com.upstock.util.OHLCUtil;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
 
@@ -50,28 +55,74 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
 
     private Behavior<ComputeTrade> processBehavior(ComputeTrade command) {
         getContext().getLog().info("Hello {}!", command.startMessage);
+        Map<String,List<List<TreadBar>>> op = new ConcurrentHashMap<>();
+        List<TreadBar> fifteenSecondsBar = new ArrayList<>();
+        List<List<TreadBar>> fifteenSecondsBars = new ArrayList<>();
+
         try {
             while (true) {
 
-                Instant endTime = startingMoment.plusSeconds(15);
-                Tread t =storeTrade.getTrade();
-                long unix_seconds = (long) Long.parseUnsignedLong(t.getTs2());
-                final DateTimeFormatter formatter =
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                System.out.println(unix_seconds);
-                System.out.println(t.getTs2());
-                Instant tempinstant = Instant.ofEpochMilli(unix_seconds / 1000000L);
-                System.out.println(tempinstant.toString());
-                while(tempinstant.isBefore(endTime)){
-
-                   // treadBar
+              Instant endTime = startingMoment.plusSeconds(15);
+                Tread t = storeTrade.getTrade();
+                if(OHLCUtil.getTimeFromEpoc(t.getTs2()).isAfter(endTime)){
+                    startingMoment =OHLCUtil.getTimeFromEpoc(t.getTs2()).plusSeconds(15);
+                    endTime = startingMoment.plusSeconds(15);
+                    storeTrade.increaseBarNum();
                 }
+                    if (t!=null) {
+                    Instant tempinstant = OHLCUtil.getTimeFromEpoc(t.getTs2());
+                    System.out.println(tempinstant.toString());
+                    while (tempinstant.isBefore(endTime)) {
+
+                        // treadBar
+                        Tread compute = t;
+
+                        TreadBar treadBar = new TreadBar();
+                        treadBar.setBar_num(storeTrade.getBarNum());
+                        treadBar.setEvent("ohlc_notify");
+                        treadBar.setSymbol(compute.getSym());
+                        treadBar.setH(compute.getP());
+                        treadBar.setC("0.0");
+                        treadBar.setL(compute.getP());
+                        treadBar.setO(compute.getP());
+                        treadBar.setVolume(compute.getQ());
+                        fifteenSecondsBar.add(treadBar);
+                        t = storeTrade.getTrade();
+                        if(storeTrade.peekTrade()!=null) {
+                            tempinstant = OHLCUtil.getTimeFromEpoc(storeTrade.peekTrade().getTs2());
+
+                            if (tempinstant.isAfter(endTime)) {
+                                fifteenSecondsBars.add(fifteenSecondsBar);
+                                fifteenSecondsBar = new ArrayList<>();
+                                startingMoment = tempinstant;
+                                storeTrade.increaseBarNum();
+                            }
+                        }
+                        else{
+                            fifteenSecondsBars.add(fifteenSecondsBar);
+                            System.out.println("processing done");
+                            t = storeTrade.getTrade();
+                            tempinstant = OHLCUtil.getTimeFromEpoc(t.getTs2());
+
+                            if (tempinstant.isAfter(endTime)) {
+                                fifteenSecondsBars.add(fifteenSecondsBar);
+                                fifteenSecondsBar = new ArrayList<>();
+                                startingMoment = tempinstant;
+                                storeTrade.increaseBarNum();
+                            }
 
 
+                        }
+
+                    }
+
+
+                }
             }
         }catch (Exception e){
             e.printStackTrace();
         }
+        System.out.println("prepared");
         //#greeter-send-message
         //command.replyTo.tell(new Greeted(command.whom, getContext().getSelf()));
         //#greeter-send-message

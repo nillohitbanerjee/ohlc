@@ -3,6 +3,8 @@ package com.upstock.dao;
 import com.upstock.dto.Tread;
 import com.upstock.util.OHLCUtil;
 
+import java.util.concurrent.TimeUnit;
+
 public class StoreTradeImpl implements StoreTrade {
 
     public void saveTrade(Tread tread){
@@ -13,6 +15,15 @@ public class StoreTradeImpl implements StoreTrade {
     public Tread getTrade() throws InterruptedException {
 
         return OHLCUtil.treadStore.take();
+    }
+    public Tread pollTrade() throws InterruptedException {
+
+        return OHLCUtil.treadStore.poll(30, TimeUnit.SECONDS);
+    }
+
+    public Tread peekTrade() throws InterruptedException {
+
+        return OHLCUtil.treadStore.peek();
     }
 
     public int increaseBarNum() throws InterruptedException {
@@ -25,9 +36,9 @@ public class StoreTradeImpl implements StoreTrade {
         OHLCUtil.barNum.set(0);
     }
 
-    public void getBarNum() throws InterruptedException {
+    public int getBarNum() throws InterruptedException {
 
-        OHLCUtil.barNum.get();
+        return OHLCUtil.barNum.get();
     }
 
     public void getTradeBar() throws InterruptedException {
