@@ -2,10 +2,11 @@ package com.upstock.dao;
 
 import com.upstock.dto.SubscriptionPojo;
 import com.upstock.dto.Tread;
+import com.upstock.dto.TreadBar;
 import com.upstock.util.OHLCUtil;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,14 +49,23 @@ public class StoreTradeImpl implements StoreTrade {
         return OHLCUtil.barNum.get();
     }
 
-    public void getTradeBar() throws InterruptedException {
+    public BlockingQueue<List<TreadBar>> getTradeBar(String symbol) throws InterruptedException {
 
-        OHLCUtil.barNum.get();
+        return OHLCUtil.treadBar.get(symbol);
     }
 
-    public void setTradeBar() throws InterruptedException {
+    public void setTradeBar(String symbol, List<TreadBar> tradeBars) throws InterruptedException {
 
-        OHLCUtil.barNum.get();
+        if(OHLCUtil.treadBar.get(symbol)==null){
+
+            BlockingQueue<List<TreadBar>> treadBarsHolder = new LinkedBlockingQueue<>();
+            treadBarsHolder.add(tradeBars);
+            OHLCUtil.treadBar.put(symbol,treadBarsHolder);
+
+        }
+        else{
+            OHLCUtil.treadBar.get(symbol).add(tradeBars);
+        }
     }
 
     public CopyOnWriteArrayList<SubscriptionPojo> getSubscriber(String symbol) throws InterruptedException {

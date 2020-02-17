@@ -6,6 +6,7 @@ import com.upstock.dto.TreadBar;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class OHLCUtil {
 
     public static final BlockingQueue<Tread> treadStore = new LinkedBlockingQueue<>();
-    public static final Map<String,BlockingQueue<TreadBar>> treadBar = new ConcurrentHashMap<>();
+    public static final Map<String,BlockingQueue<List<TreadBar>>> treadBar = new ConcurrentHashMap<>();
     public static final Map<String, CopyOnWriteArrayList<SubscriptionPojo>> subscriberList = new ConcurrentHashMap<>();
     public static final AtomicInteger barNum =new AtomicInteger();
 

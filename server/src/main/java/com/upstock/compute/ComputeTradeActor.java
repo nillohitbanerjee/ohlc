@@ -15,9 +15,12 @@ import com.upstock.util.OHLCUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
 
@@ -93,10 +96,42 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
 
                             if (tempinstant.isAfter(endTime)) {
                                 fifteenSecondsBars.add(fifteenSecondsBar);
+
+                                Map <String , List <TreadBar >> tempCalculation = new HashMap<>();
+
+                                fifteenSecondsBar.forEach(tr->{
+
+                                    if(tempCalculation.get(tr.getSymbol())==null){
+
+                                        List <TreadBar > tempList = new ArrayList<>();
+                                        tempList.add(tr);
+                                        tempCalculation.put(tr.getSymbol(),tempList);
+
+                                    }
+                                    else{
+                                        tempCalculation.get(tr.getSymbol()).add(tr);
+                                    }
+                                });
+                                tempCalculation.forEach((x,y)->{
+                                    try {
+                                        Double sum = y.stream()
+                                                .map(tempTreadBar -> Double.parseDouble(tempTreadBar.getVolume()))
+                                                .reduce(0.0, (a, b) -> a + b);
+
+                                        int size = y.size();
+                                        y.get(size-1).setVolume(sum+"");
+                                        y.get(size-1).setC(y.get(size-1).getH());
+
+                                        storeTrade.setTradeBar(x, y);
+                                    }catch (Exception e){
+                                        e.printStackTrace();
+                                    }
+                                });
                                 fifteenSecondsBar = new ArrayList<>();
                                 startingMoment = tempinstant;
                                 storeTrade.increaseBarNum();
                             }
+
                         }
                         else{
                             fifteenSecondsBars.add(fifteenSecondsBar);
