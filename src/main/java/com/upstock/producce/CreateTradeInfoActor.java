@@ -1,6 +1,7 @@
 package com.upstock.producce;
 
 import akka.actor.typed.ActorRef;
+import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
@@ -9,6 +10,8 @@ import akka.actor.typed.javadsl.Receive;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.upstock.compute.ComputeTradeActor;
+import com.upstock.compute.events.ComputeTrade;
 import com.upstock.consume.ProcessTreadInfoActor;
 import com.upstock.consume.events.ProcessTread;
 import com.upstock.dto.Tread;
@@ -23,6 +26,7 @@ public class CreateTradeInfoActor extends AbstractBehavior<ReadTread> {
 
 
     private final ActorRef<ProcessTread> treadProcessor;
+    private final ActorRef<ComputeTrade> calculator ;
 
     public static Behavior<ReadTread> create() {
         return Behaviors.setup(CreateTradeInfoActor::new);
@@ -32,6 +36,7 @@ public class CreateTradeInfoActor extends AbstractBehavior<ReadTread> {
         super(context);
         //#create-actors
         treadProcessor = context.spawn(ProcessTreadInfoActor.create(), "treadProcessor");
+        calculator = context.spawn(ComputeTradeActor.create(), "treadCalculate");
         //#create-actors
     }
 
@@ -62,6 +67,7 @@ public class CreateTradeInfoActor extends AbstractBehavior<ReadTread> {
             e.printStackTrace();
         }
 
+        calculator.tell(new ComputeTrade("start Compute"));
         //#create-actors
         return this;
     }

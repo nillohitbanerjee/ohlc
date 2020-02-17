@@ -15,7 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 import java.util.Arrays;
 
 @SpringBootApplication
-@ComponentScan(basePackages = " com.upstock.subscribe")
+@ComponentScan(basePackages = " com.upstock.subscribe , com.upstock.dao")
 public class OHLCApp {
 
     public static void main(String args[]){
@@ -23,13 +23,13 @@ public class OHLCApp {
 
         SpringApplication.run(OHLCApp.class, args);
         final ActorSystem<ReadTread> greeterMain = ActorSystem.create(CreateTradeInfoActor.create(), "treadCreatorActor");
-        final ActorSystem<ComputeTrade> calculator = ActorSystem.create(ComputeTradeActor.create(), "trealculate");
+
         //#actor-systema
 
 
         //#main-send-messages
-        greeterMain.tell(new ReadTread("C:\\Users\\nillo\\Desktop\\upstock\\trades-data\\trades.json"));
-        calculator.tell(new ComputeTrade("start Compute"));
+        greeterMain.tell(new ReadTread("/Users/nillohitbanerjee/Desktop/upstox/sample.json"));
+
 
 
     }

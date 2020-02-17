@@ -60,10 +60,10 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
         List<List<TreadBar>> fifteenSecondsBars = new ArrayList<>();
 
         try {
-            while (true) {
+            while (storeTrade.peekTrade()!=null) {
 
               Instant endTime = startingMoment.plusSeconds(15);
-                Tread t = storeTrade.getTrade();
+                Tread t = storeTrade.peekTrade();
                 if(OHLCUtil.getTimeFromEpoc(t.getTs2()).isAfter(endTime)){
                     startingMoment =OHLCUtil.getTimeFromEpoc(t.getTs2()).plusSeconds(15);
                     endTime = startingMoment.plusSeconds(15);
@@ -75,7 +75,7 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
                     while (tempinstant.isBefore(endTime)) {
 
                         // treadBar
-                        Tread compute = t;
+                        Tread compute = storeTrade.getTrade();
 
                         TreadBar treadBar = new TreadBar();
                         treadBar.setBar_num(storeTrade.getBarNum());
@@ -87,7 +87,7 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
                         treadBar.setO(compute.getP());
                         treadBar.setVolume(compute.getQ());
                         fifteenSecondsBar.add(treadBar);
-                        t = storeTrade.getTrade();
+                        //t = storeTrade.getTrade();
                         if(storeTrade.peekTrade()!=null) {
                             tempinstant = OHLCUtil.getTimeFromEpoc(storeTrade.peekTrade().getTs2());
 
@@ -101,15 +101,7 @@ public class ComputeTradeActor extends AbstractBehavior<ComputeTrade> {
                         else{
                             fifteenSecondsBars.add(fifteenSecondsBar);
                             System.out.println("processing done");
-                            t = storeTrade.getTrade();
-                            tempinstant = OHLCUtil.getTimeFromEpoc(t.getTs2());
-
-                            if (tempinstant.isAfter(endTime)) {
-                                fifteenSecondsBars.add(fifteenSecondsBar);
-                                fifteenSecondsBar = new ArrayList<>();
-                                startingMoment = tempinstant;
-                                storeTrade.increaseBarNum();
-                            }
+                            break;
 
 
                         }
